@@ -1,48 +1,60 @@
 # yaml-language-server: $schema=https://agentgateway.dev/schema/config
-# agentgateway configuration - LLM Gateway with Anthropic Claude
 binds:
 - port: 3000
   listeners:
   - routes:
-    # ── LLM route: OpenAI-compatible endpoint for Claude ──────────────────
-    - match:
-        prefix: /v1
+    - name: anthropic
+      matches:
+      - path:
+          pathPrefix: /
+        headers:
+        - name: x-provider
+          value:
+            exact: anthropic
       backends:
       - ai:
-          name: claude
+          name: anthropic
           provider:
             anthropic:
               model: claude-sonnet-4-20250514
       policies:
         cors:
-          allowOrigins:
-          - '*'
-          allowHeaders:
-          - '*'
-          allowMethods:
-          - GET
-          - POST
-          - OPTIONS
+          allowOrigins: ["*"]
+          allowHeaders: ["*"]
         backendAuth:
           key: "$ANTHROPIC_API_KEY"
 
-    # ── MCP route: model-context-protocol tools ───────────────────────────
-    - backends:
-      - mcp:
-          targets:
-          - name: everything
-            stdio:
-              cmd: npx
-              args:
-              - '@modelcontextprotocol/server-everything'
+    - name: gemini
+      matches:
+      - path:
+          pathPrefix: /
+        headers:
+        - name: x-provider
+          value:
+            exact: gemini
+      backends:
+      - ai:
+          name: gemini
+          provider:
+            gemini:
+              model: gemini-2.0-flash
       policies:
         cors:
-          allowOrigins:
-          - '*'
-          allowHeaders:
-          - mcp-protocol-version
-          - content-type
-          - cache-control
-          exposeHeaders:
-          - Mcp-Session-Id
-        a2a: {}
+          allowOrigins: ["*"]
+          allowHeaders: ["*"]
+        backendAuth:
+          key: "$GEMINI_API_KEY"
+
+    - name: openai-default
+      backends:
+      - ai:
+          name: openai
+          provider:
+            openAI:
+              model: gpt-4.1-nano
+      policies:
+        cors:
+          allowOrigins: ["*"]
+          allowHeaders: ["*"]
+        backendAuth:
+          key: "$OPENAI_API_KEY"
