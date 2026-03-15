@@ -1,0 +1,14 @@
+services:
+  agentgateway:
+    container_name: agentgateway
+    restart: unless-stopped
+    image: cr.agentgateway.dev/agentgateway:v1.0.0-rc.2
+    ports:
+      - "3000:3000"
+      - "127.0.0.1:15000:15000"
+    volumes:
+      - ./config.yaml:/config.yaml
+    environment:
+      - ADMIN_ADDR=0.0.0.0:15000
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    command: ["-f", "/config.yaml"]
