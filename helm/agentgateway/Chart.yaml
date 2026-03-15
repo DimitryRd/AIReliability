@@ -1,0 +1,6 @@
+apiVersion: v2
+name: agentgateway
+description: agentgateway - AI/MCP gateway with LLM proxy support
+type: application
+version: 1.0.0
+appVersion: v1.0.0-rc.2

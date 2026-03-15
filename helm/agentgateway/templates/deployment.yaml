@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agentgateway.fullname" . }}
+  labels:
+    {{- include "agentgateway.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "agentgateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "agentgateway.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+      - name: agentgateway
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args: ["-f", "/config.yaml"]
+        ports:
+        - name: gateway
+          containerPort: 3000
+          protocol: TCP
+        - name: admin
+          containerPort: 15000
+          protocol: TCP
+        env:
+        - name: ADMIN_ADDR
+          value: "0.0.0.0:15000"
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.existingSecret }}
+              key: ANTHROPIC_API_KEY
+        volumeMounts:
+        - name: config
+          mountPath: /config.yaml
+          subPath: config.yaml
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: admin
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: admin
+          initialDelaySeconds: 3
+          periodSeconds: 5
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "agentgateway.fullname" . }}-config

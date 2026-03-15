@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "agentgateway.fullname" . }}-config
+  labels:
+    {{- include "agentgateway.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    # yaml-language-server: $schema=https://agentgateway.dev/schema/config
+    binds:
+    - port: 3000
+      listeners:
+      - routes:
+        - match:
+            prefix: /v1
+          backends:
+          - ai:
+              name: claude
+              provider:
+                anthropic:
+                  model: claude-sonnet-4-20250514
+          policies:
+            cors:
+              allowOrigins:
+              - '*'
+              allowHeaders:
+              - '*'
+              allowMethods:
+              - GET
+              - POST
+              - OPTIONS
+            backendAuth:
+              key: "$ANTHROPIC_API_KEY"
+        - backends:
+          - mcp:
+              targets:
+              - name: everything
+                stdio:
+                  cmd: npx
+                  args:
+                  - '@modelcontextprotocol/server-everything'
+          policies:
+            cors:
+              allowOrigins:
+              - '*'
+              allowHeaders:
+              - mcp-protocol-version
+              - content-type
+              - cache-control
+              exposeHeaders:
+              - Mcp-Session-Id
+            a2a: {}

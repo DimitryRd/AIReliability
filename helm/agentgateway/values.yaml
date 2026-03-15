@@ -1,0 +1,29 @@
+replicaCount: 1
+
+image:
+  repository: cr.agentgateway.dev/agentgateway
+  tag: v1.0.0-rc.2
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  gatewayPort: 3000
+  adminPort: 15000
+
+# Secret name that must contain ANTHROPIC_API_KEY
+# Create with: kubectl create secret generic agentgateway-secret \
+#   --from-literal=ANTHROPIC_API_KEY=<your-key>
+existingSecret: agentgateway-secret
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Expose admin UI externally via NodePort or LoadBalancer (not recommended in prod)
+adminService:
+  enabled: true
+  type: ClusterIP
