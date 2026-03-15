@@ -1,22 +1,48 @@
 # yaml-language-server: $schema=https://agentgateway.dev/schema/config
+# agentgateway configuration - LLM Gateway with Anthropic Claude
 binds:
 - port: 3000
   listeners:
   - routes:
-    - policies:
+    # ── LLM route: OpenAI-compatible endpoint for Claude ──────────────────
+    - match:
+        prefix: /v1
+      backends:
+      - ai:
+          name: claude
+          provider:
+            anthropic:
+              model: claude-sonnet-4-20250514
+      policies:
         cors:
           allowOrigins:
-          - "*"
+          - '*'
           allowHeaders:
-          - mcp-protocol-version
-          - content-type
-          - cache-control
-          exposeHeaders:
-          - "Mcp-Session-Id"
-      backends:
+          - '*'
+          allowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        backendAuth:
+          key: "$ANTHROPIC_API_KEY"
+
+    # ── MCP route: model-context-protocol tools ───────────────────────────
+    - backends:
       - mcp:
           targets:
           - name: everything
             stdio:
               cmd: npx
-              args: ["@modelcontextprotocol/server-everything"]
+              args:
+              - '@modelcontextprotocol/server-everything'
+      policies:
+        cors:
+          allowOrigins:
+          - '*'
+          allowHeaders:
+          - mcp-protocol-version
+          - content-type
+          - cache-control
+          exposeHeaders:
+          - Mcp-Session-Id
+        a2a: {}
