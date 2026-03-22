@@ -46,14 +46,12 @@ spec:
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         livenessProbe:
-          httpGet:
-            path: /healthz/live
+          tcpSocket:
             port: healthz
           initialDelaySeconds: 5
           periodSeconds: 10
         readinessProbe:
-          httpGet:
-            path: /healthz/ready
+          tcpSocket:
             port: healthz
           initialDelaySeconds: 3
           periodSeconds: 5
