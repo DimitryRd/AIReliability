@@ -24,7 +24,7 @@ binds:
         backendAuth:
           key: "$ANTHROPIC_API_KEY"
 
-    - name: gemini
+    # - name: gemini
       matches:
       - path:
           pathPrefix: /
@@ -45,7 +45,7 @@ binds:
         backendAuth:
           key: "$GEMINI_API_KEY"
 
-    - name: openai-default
+    # - name: openai-default
       backends:
       - ai:
           name: openai

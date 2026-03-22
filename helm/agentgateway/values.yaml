@@ -23,7 +23,6 @@ resources:
     cpu: 500m
     memory: 256Mi
 
-# Expose admin UI externally via NodePort or LoadBalancer (not recommended in prod)
 adminService:
   enabled: true
   type: ClusterIP
