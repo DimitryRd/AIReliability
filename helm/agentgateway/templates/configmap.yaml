@@ -44,10 +44,11 @@ data:
               name: gemini
               provider:
                 gemini:
-                  model: gemini-3-flash-preview
+                  model: gemini-2.0-flash-lite
           policies:
             cors:
               allowOrigins: ["*"]
               allowHeaders: ["*"]
             backendAuth:
               key: "$GEMINI_API_KEY"
+

@@ -1,0 +1,23 @@
+apiVersion: kagent.dev/v1alpha2
+kind: ModelConfig
+metadata:
+  name: anthropic-model-config
+  namespace: kagent
+spec:
+  apiKeySecret: kagent-agentgateway
+  apiKeySecretKey: ANTHROPIC_API_KEY
+  model: claude-sonnet-4-20250514
+  provider: Anthropic
+  anthropic: {}
+---
+apiVersion: kagent.dev/v1alpha2
+kind: ModelConfig
+metadata:
+  name: gemini-model-config
+  namespace: kagent
+spec:
+  apiKeySecret: kagent-agentgateway
+  apiKeySecretKey: GEMINI_API_KEY
+  model: gemini-2.0-flash-lite
+  provider: Gemini
+  gemini: {}
