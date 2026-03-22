@@ -28,6 +28,9 @@ spec:
         - name: admin
           containerPort: 15000
           protocol: TCP
+        - name: healthz
+          containerPort: 15021
+          protocol: TCP
         env:
         - name: ADMIN_ADDR
           value: "0.0.0.0:15000"
@@ -44,14 +47,14 @@ spec:
           {{- toYaml .Values.resources | nindent 10 }}
         livenessProbe:
           httpGet:
-            path: /healthz
-            port: admin
+            path: /healthz/live
+            port: healthz
           initialDelaySeconds: 5
           periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /healthz
-            port: admin
+            path: /healthz/ready
+            port: healthz
           initialDelaySeconds: 3
           periodSeconds: 5
       volumes:
