@@ -1,0 +1,15 @@
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: devops-agent
+  namespace: kagent
+spec:
+  modelConfig: anthropic-model-config
+  systemMessage: |
+    You are a helpful DevOps and Kubernetes assistant.
+    You help with infrastructure management, debugging, and automation.
+  tools:
+    - type: McpServer
+      mcpServer:
+        name: kagent-tool-server
+        namespace: kagent
