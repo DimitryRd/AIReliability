@@ -13,5 +13,7 @@ spec:
     tools:
       - type: McpServer
         mcpServer:
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
           name: kagent-tool-server
           namespace: kagent
