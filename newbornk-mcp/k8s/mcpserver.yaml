@@ -1,0 +1,17 @@
+apiVersion: kagent.dev/v1alpha1
+kind: MCPServer
+metadata:
+  name: newbornk-mcp
+  namespace: kagent
+spec:
+  deployment:
+    image: newbornk-mcp:latest
+    imagePullPolicy: Never
+    port: 3000
+    env:
+      SHOPIFY_DOMAIN: "newbornk-com.myshopify.com"
+    secretRefs:
+      - name: newbornk-shopify
+  httpTransport:
+    targetPort: 3000
+    path: /mcp

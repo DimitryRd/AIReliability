@@ -1,11 +1,14 @@
 # MCP Sampling: AI у реальному e-commerce бізнесі
 ## Кейс: NEWBORN K — concept store (newbornk.com)
 
+**ВІД СЕБЕ**
+Я як розробник та фаундер власного бізнесу прекрасно розумію що наявність нових технологій тут і зараз має приносити value та окуповувати себе в найближчий час. Відсутність результату - витрачені кошти, неоптимізовані витрати, зменшення рентабельності і звідси - закриття бізнесу. 
+Основна механізм використнная протоколу MCP - використнна сервером ініціації запитів до ЛЛМ через кліеєнта
 ---
 
-## 1. Що таке MCP Sampling
-
 **MCP Sampling** — механізм протоколу MCP, який дозволяє **серверу** ініціювати запит до LLM через клієнта (а не навпаки).
+
+![alt text](<Screenshot 2026-03-24 at 13.12.13.png>)
 
 ```
 Звичайний MCP flow:
@@ -17,11 +20,6 @@ MCP Sampling flow:
                                    людина може переглянути
                                    і схвалити/відхилити
 ```
-
-**Ключові особливості:**
-- Сервер не платить за LLM — платить клієнт (користувач)
-- Людина бачить і контролює кожен запит (human-in-the-loop)
-- Сервер може вбудувати "розум" без власного LLM API ключа
 
 ---
 
@@ -257,3 +255,5 @@ async def generate_product_description(product_id: str) -> str:
 - [Flipping the flow: How MCP sampling works](https://workos.com/blog/mcp-sampling)
 - [MCP Use Cases: Real-World Examples](https://apigene.ai/blog/mcp-use-cases)
 - [MCP in Enterprise AI](https://appwrk.com/insights/top-enterprise-mcp-use-cases)
+
+

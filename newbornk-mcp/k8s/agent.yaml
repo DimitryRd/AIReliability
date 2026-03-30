@@ -1,0 +1,27 @@
+apiVersion: kagent.dev/v1alpha2
+kind: Agent
+metadata:
+  name: newbornk-agent
+  namespace: kagent
+spec:
+  type: Declarative
+  declarative:
+    modelConfig: gemini-model-config
+    systemMessage: |
+      Ти AI-асистент для концепт-стору NEWBORN K (newbornk.com) у Києві.
+      Допомагаєш з управлінням асортиментом, генерацією описів товарів та аналітикою продажів.
+      Відповідаєш українською мовою. Стиль — діловий але дружній.
+    tools:
+      - type: McpServer
+        mcpServer:
+          kind: RemoteMCPServer
+          apiGroup: kagent.dev
+          name: newbornk-mcp
+          namespace: kagent
+          toolNames:
+            - get_products
+            - get_product_details
+            - find_product_by_name
+            - update_product_seo
+            - get_products_without_seo
+            - get_orders_analytics

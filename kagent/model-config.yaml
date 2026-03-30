@@ -18,6 +18,16 @@ metadata:
 spec:
   apiKeySecret: kagent-agentgateway
   apiKeySecretKey: GEMINI_API_KEY
-  model: gemini-2.0-flash-lite
+  model: gemini-2.5-flash
   provider: Gemini
   gemini: {}
+---
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: my-mcp-server
+  namespace: kagent
+spec:
+  url: http://agentgateway:3000
+
+

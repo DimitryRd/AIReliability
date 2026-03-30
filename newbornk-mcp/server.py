@@ -1,0 +1,144 @@
+import httpx
+import os
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("newbornk-assistant", host="0.0.0.0", port=3000)
+
+SHOPIFY_DOMAIN = os.getenv("SHOPIFY_DOMAIN", "newbornk.myshopify.com")
+SHOPIFY_TOKEN = os.getenv("SHOPIFY_ADMIN_TOKEN", "")
+
+
+async def shopify_get(path: str) -> dict:
+    url = f"https://{SHOPIFY_DOMAIN}/admin/api/2024-01/{path}"
+    headers = {"X-Shopify-Access-Token": SHOPIFY_TOKEN}
+    async with httpx.AsyncClient() as client:
+        r = await client.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+        return r.json()
+
+
+async def shopify_put(path: str, payload: dict) -> dict:
+    url = f"https://{SHOPIFY_DOMAIN}/admin/api/2024-01/{path}"
+    headers = {"X-Shopify-Access-Token": SHOPIFY_TOKEN, "Content-Type": "application/json"}
+    async with httpx.AsyncClient() as client:
+        r = await client.put(url, headers=headers, json=payload, timeout=10)
+        r.raise_for_status()
+        return r.json()
+
+
+@mcp.tool()
+async def get_products(limit: int = 10) -> str:
+    """Отримати список товарів з Shopify"""
+    data = await shopify_get(f"products.json?limit={limit}&fields=id,title,vendor,product_type,variants,metafields_global_title_tag")
+    products = data.get("products", [])
+    lines = []
+    for p in products:
+        price = p["variants"][0]["price"] if p["variants"] else "N/A"
+        has_seo = "є" if p.get("metafields_global_title_tag") else "немає"
+        lines.append(f"ID:{p['id']} | {p['title']} | {p['vendor']} | {price} грн | SEO: {has_seo}")
+    return "\n".join(lines) if lines else "Товари не знайдені"
+
+
+@mcp.tool()
+async def get_product_details(product_id: str) -> str:
+    """Отримати деталі одного товару для генерації SEO"""
+    data = await shopify_get(f"products/{product_id}.json")
+    p = data.get("product", {})
+    if not p:
+        return f"Товар {product_id} не знайдений"
+    price = p["variants"][0]["price"] if p.get("variants") else "N/A"
+    return (
+        f"ID: {p['id']}\n"
+        f"Назва: {p['title']}\n"
+        f"Бренд: {p['vendor']}\n"
+        f"Категорія: {p['product_type']}\n"
+        f"Ціна: {price} грн\n"
+        f"Поточний SEO title: {p.get('metafields_global_title_tag', 'не встановлено')}\n"
+        f"Поточний SEO description: {p.get('metafields_global_description_tag', 'не встановлено')}"
+    )
+
+
+@mcp.tool()
+async def find_product_by_name(name: str) -> str:
+    """Знайти товар за назвою і повернути його ID та деталі"""
+    data = await shopify_get(f"products.json?title={name}&limit=5&fields=id,title,vendor,product_type,variants")
+    products = data.get("products", [])
+    if not products:
+        return f"Товар '{name}' не знайдений"
+    lines = []
+    for p in products:
+        price = p["variants"][0]["price"] if p["variants"] else "N/A"
+        lines.append(f"ID:{p['id']} | {p['title']} | {p['vendor']} | {price} грн")
+    return "\n".join(lines)
+
+
+@mcp.tool()
+async def update_product_seo(product_id: str, seo_title: str, seo_description: str) -> str:
+    """Оновити SEO title і SEO description товару в Shopify"""
+    if len(seo_title) > 70:
+        return f"❌ SEO title задовгий ({len(seo_title)} симв). Максимум 70 символів."
+    if len(seo_description) > 160:
+        return f"❌ SEO description задовгий ({len(seo_description)} симв). Максимум 160 символів."
+
+    data = await shopify_get(f"products/{product_id}.json?fields=id,title")
+    p = data.get("product", {})
+    if not p:
+        return f"Товар {product_id} не знайдений"
+
+    await shopify_put(f"products/{product_id}.json", {
+        "product": {
+            "id": product_id,
+            "metafields_global_title_tag": seo_title,
+            "metafields_global_description_tag": seo_description,
+        }
+    })
+    return (
+        f"✅ SEO оновлено для '{p['title']}':\n"
+        f"Title ({len(seo_title)} симв): {seo_title}\n"
+        f"Description ({len(seo_description)} симв): {seo_description}"
+    )
+
+
+@mcp.tool()
+async def get_products_without_seo(limit: int = 20) -> str:
+    """Отримати список товарів без SEO title для масового оновлення"""
+    data = await shopify_get(f"products.json?limit={limit}&fields=id,title,vendor,product_type,variants,metafields_global_title_tag")
+    products = data.get("products", [])
+    without_seo = [p for p in products if not p.get("metafields_global_title_tag")]
+    if not without_seo:
+        return "Всі товари мають SEO title"
+    lines = []
+    for p in without_seo:
+        price = p["variants"][0]["price"] if p["variants"] else "N/A"
+        lines.append(f"ID:{p['id']} | {p['title']} | {p['vendor']} | {price} грн")
+    return f"Товари без SEO ({len(without_seo)}):\n" + "\n".join(lines)
+
+
+@mcp.tool()
+async def get_orders_analytics() -> str:
+    """Отримати аналітику останніх 50 замовлень"""
+    orders_data = await shopify_get("orders.json?status=any&limit=50&fields=id,total_price,created_at,line_items")
+    orders = orders_data.get("orders", [])
+    if not orders:
+        return "Замовлення не знайдені"
+
+    total_revenue = sum(float(o["total_price"]) for o in orders)
+    product_counts: dict[str, int] = {}
+    for order in orders:
+        for item in order.get("line_items", []):
+            name = item["title"]
+            product_counts[name] = product_counts.get(name, 0) + item["quantity"]
+
+    top = sorted(product_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_str = "\n".join(f"  - {name}: {qty} шт" for name, qty in top)
+
+    return (
+        f"Замовлень: {len(orders)}\n"
+        f"Виручка: {total_revenue:.0f} грн\n"
+        f"Середній чек: {total_revenue/len(orders):.0f} грн\n\n"
+        f"Топ-5 товарів:\n{top_str}"
+    )
+
+
+if __name__ == "__main__":
+    mcp.run(transport="streamable-http")

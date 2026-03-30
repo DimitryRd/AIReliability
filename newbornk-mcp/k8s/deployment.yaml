@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: newbornk-mcp
+  namespace: kagent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: newbornk-mcp
+  template:
+    metadata:
+      labels:
+        app: newbornk-mcp
+    spec:
+      containers:
+      - name: newbornk-mcp
+        image: newbornk-mcp:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        env:
+        - name: SHOPIFY_DOMAIN
+          value: "newbornk-com.myshopify.com"
+        - name: MCP_ALLOWED_HOSTS
+          value: "*"
+        - name: SHOPIFY_ADMIN_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: newbornk-shopify
+              key: SHOPIFY_ADMIN_TOKEN
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: newbornk-mcp
+  namespace: kagent
+spec:
+  selector:
+    app: newbornk-mcp
+  ports:
+  - port: 3000
+    targetPort: 3000
+---
+apiVersion: kagent.dev/v1alpha2
+kind: RemoteMCPServer
+metadata:
+  name: newbornk-mcp
+  namespace: kagent
+spec:
+  description: "NEWBORN K Shopify MCP server - product descriptions and analytics via MCP Sampling"
+  url: http://newbornk-mcp.kagent:3000/mcp
