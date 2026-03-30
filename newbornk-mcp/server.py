@@ -1,6 +1,7 @@
 import httpx
 import os
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
+from mcp.types import SamplingMessage, TextContent
 
 mcp = FastMCP("newbornk-assistant", host="0.0.0.0", port=3000)
 
@@ -138,6 +139,44 @@ async def get_orders_analytics() -> str:
         f"Середній чек: {total_revenue/len(orders):.0f} грн\n\n"
         f"Топ-5 товарів:\n{top_str}"
     )
+
+
+@mcp.tool()
+async def generate_product_description(product_id: str, ctx: Context) -> str:
+    """[MCP Sampling] Генерує продаючий опис товару — сервер запитує LLM через клієнта"""
+    data = await shopify_get(f"products/{product_id}.json")
+    p = data.get("product", {})
+    if not p:
+        return f"Товар {product_id} не знайдений"
+
+    price = p["variants"][0]["price"] if p.get("variants") else "N/A"
+
+    # MCP Sampling: сервер ініціює запит до LLM через клієнта
+    result = await ctx.session.create_message(
+        messages=[
+            SamplingMessage(
+                role="user",
+                content=TextContent(
+                    type="text",
+                    text=f"""Напиши продаючий опис для товару концепт-стору NEWBORN K:
+
+Назва: {p.get('title')}
+Бренд: {p.get('vendor')}
+Категорія: {p.get('product_type')}
+Ціна: {price} грн
+
+Вимоги:
+- Мова: українська
+- Стиль: мінімалістичний, міський, streetwear
+- Довжина: 80-120 слів
+- Без кліше типу "неймовірний" або "унікальний\""""
+                )
+            )
+        ],
+        system_prompt="Ти копірайтер концепт-стору NEWBORN K у Києві. Пишеш короткі, стильні описи товарів українською мовою.",
+        max_tokens=300,
+    )
+    return result.content.text
 
 
 if __name__ == "__main__":
