@@ -24,6 +24,13 @@ spec:
           value: "newbornk-com.myshopify.com"
         - name: MCP_ALLOWED_HOSTS
           value: "*"
+        - name: PHOENIX_COLLECTOR_ENDPOINT
+          value: "http://phoenix-svc.observability:4317"
+        - name: PHOENIX_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: phoenix-api-key
+              key: PHOENIX_ADMIN_SECRET
         - name: SHOPIFY_ADMIN_TOKEN
           valueFrom:
             secretKeyRef:

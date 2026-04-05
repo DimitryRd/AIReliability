@@ -1,7 +1,43 @@
 import httpx
 import os
+import json
+from functools import wraps
 from mcp.server.fastmcp import FastMCP, Context
 from mcp.types import SamplingMessage, TextContent
+from phoenix.otel import register
+from opentelemetry import trace
+from opentelemetry.trace import SpanKind
+
+# Phoenix tracing — відправляємо trace у Phoenix через gRPC OTLP
+PHOENIX_ENDPOINT = os.getenv("PHOENIX_COLLECTOR_ENDPOINT", "http://phoenix-svc.observability:4317")
+PHOENIX_API_KEY = os.getenv("PHOENIX_API_KEY", "")
+register(
+    project_name="newbornk-mcp",
+    endpoint=PHOENIX_ENDPOINT,
+    headers={"authorization": f"Bearer {PHOENIX_API_KEY}"} if PHOENIX_API_KEY else {},
+)
+
+tracer = trace.get_tracer("newbornk-mcp")
+
+def traced_tool(func):
+    """Wrap MCP tools to capture input/output in Phoenix"""
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        with tracer.start_as_current_span(func.__name__, kind=SpanKind.SERVER) as span:
+            span.set_attribute("openinference.span.kind", "TOOL")
+            span.set_attribute("tool.name", func.__name__)
+            # log inputs (skip Context object — not serializable)
+            safe_kwargs = {k: v for k, v in kwargs.items() if k != "ctx"}
+            span.set_attribute("input.value", json.dumps(safe_kwargs))
+            try:
+                result = await func(*args, **kwargs)
+                span.set_attribute("output.value", str(result)[:2000])
+                return result
+            except Exception as e:
+                span.record_exception(e)
+                span.set_attribute("output.value", f"ERROR: {e}")
+                raise
+    return wrapper
 
 mcp = FastMCP("newbornk-assistant", host="0.0.0.0", port=3000)
 
@@ -28,6 +64,7 @@ async def shopify_put(path: str, payload: dict) -> dict:
 
 
 @mcp.tool()
+@traced_tool
 async def get_products(limit: int = 10) -> str:
     """Отримати список товарів з Shopify"""
     data = await shopify_get(f"products.json?limit={limit}&fields=id,title,vendor,product_type,variants,metafields_global_title_tag")
@@ -41,6 +78,7 @@ async def get_products(limit: int = 10) -> str:
 
 
 @mcp.tool()
+@traced_tool
 async def get_product_details(product_id: str) -> str:
     """Отримати деталі одного товару для генерації SEO"""
     data = await shopify_get(f"products/{product_id}.json")
@@ -60,6 +98,7 @@ async def get_product_details(product_id: str) -> str:
 
 
 @mcp.tool()
+@traced_tool
 async def find_product_by_name(name: str) -> str:
     """Знайти товар за назвою і повернути його ID та деталі"""
     data = await shopify_get(f"products.json?title={name}&limit=5&fields=id,title,vendor,product_type,variants")
@@ -74,6 +113,7 @@ async def find_product_by_name(name: str) -> str:
 
 
 @mcp.tool()
+@traced_tool
 async def update_product_seo(product_id: str, seo_title: str, seo_description: str) -> str:
     """Оновити SEO title і SEO description товару в Shopify"""
     if len(seo_title) > 70:
@@ -101,6 +141,7 @@ async def update_product_seo(product_id: str, seo_title: str, seo_description: s
 
 
 @mcp.tool()
+@traced_tool
 async def get_products_without_seo(limit: int = 20) -> str:
     """Отримати список товарів без SEO title для масового оновлення"""
     data = await shopify_get(f"products.json?limit={limit}&fields=id,title,vendor,product_type,variants,metafields_global_title_tag")
@@ -116,6 +157,7 @@ async def get_products_without_seo(limit: int = 20) -> str:
 
 
 @mcp.tool()
+@traced_tool
 async def get_orders_analytics() -> str:
     """Отримати аналітику останніх 50 замовлень"""
     orders_data = await shopify_get("orders.json?status=any&limit=50&fields=id,total_price,created_at,line_items")
@@ -141,6 +183,7 @@ async def get_orders_analytics() -> str:
     )
 
 @mcp.tool()
+@traced_tool
 async def get_products_with_stock(limit: int = 20) -> str:
     """Отримати список товарів із залишком більше 0"""
     data = await shopify_get(f"products.json?limit={limit}&fields=id,title,vendor,product_type,variants")
@@ -168,6 +211,7 @@ async def get_products_with_stock(limit: int = 20) -> str:
 
 
 @mcp.tool()
+@traced_tool
 async def generate_product_description(product_id: str, ctx: Context) -> str:
     """[MCP Sampling] Генерує продаючий опис товару — сервер запитує LLM через клієнта"""
     data = await shopify_get(f"products/{product_id}.json")
