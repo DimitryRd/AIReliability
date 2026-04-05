@@ -20,11 +20,21 @@ data:
               value:
                 exact: anthropic
           backends:
-          - ai:
+          - weight: 1
+            ai:
               name: anthropic
               provider:
                 anthropic:
                   model: claude-sonnet-4-20250514
+          - weight: 0
+            ai:
+              name: gemini-fallback
+              provider:
+                gemini:
+                  model: gemini-2.5-flash
+            policies:
+              backendAuth:
+                key: "$GEMINI_API_KEY"
           policies:
             cors:
               allowOrigins: ["*"]
