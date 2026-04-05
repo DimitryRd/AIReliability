@@ -38,10 +38,15 @@ Kubernetes (kind — локальний кластер)
   │     ├── newbornk-agent        ← NEWBORN K бізнес агент
   │     └── ModelConfigs          ← Anthropic, Gemini, OpenAI
   │
-  └── flux-system namespace
-        ├── flux-operator         ← Web UI
-        ├── source-controller     ← Git sync
-        └── kustomize-controller  ← Apply resources
+  ├── flux-system namespace
+  │     ├── flux-operator         ← Web UI
+  │     ├── source-controller     ← Git sync
+  │     └── kustomize-controller  ← Apply resources
+  │
+  └── observability namespace
+        ├── phoenix-svc           ← LLM Observability UI (port 6006)
+        │     └── OTLP collector  ← Traces ingestion (port 4317)
+        └── qdrant                ← Vector DB (port 6333)
 ```
 
 ---
@@ -339,6 +344,8 @@ kubectl apply -f k8s/
 | kagent UI | `kubectl port-forward svc/kagent-ui 8080:8080 -n kagent` | http://localhost:8080 |
 | Flux UI | `kubectl port-forward svc/flux-operator 9080:9080 -n flux-system` | http://localhost:9080 |
 | A2A Controller | `kubectl port-forward svc/kagent-controller 8083:8083 -n kagent` | http://localhost:8083 |
+| Phoenix (Observability) | `kubectl port-forward svc/phoenix-svc 6006:6006 -n observability` | http://localhost:6006 |
+| Qdrant (Vector DB) | `kubectl port-forward svc/qdrant 6333:6333 -n observability` | http://localhost:6333/dashboard |
 
 ---
 
@@ -354,8 +361,90 @@ kubectl apply -f k8s/
 | LLM Providers | Anthropic Claude, Google Gemini |
 | MCP Protocol | Python FastMCP |
 | Data Source | Shopify Admin API |
+| Observability | Arize Phoenix + Qdrant |
+| Tracing | OpenTelemetry (OTLP gRPC) |
 | Language | Python 3.12 |
 | Container | Docker |
+
+---
+
+## Лабораторна №5 — Observability (Phoenix + Qdrant)
+
+**Мета:** Розгорнути стек спостережуваності через GitOps.
+
+### Що зроблено
+
+- Розгорнуто **Arize Phoenix** — LLM observability платформа (трасування, оцінка)
+- Розгорнуто **Qdrant** — векторна база даних для RAG та embeddings
+- Обидва сервіси деплояться автоматично через **Flux GitOps**
+
+### Ключові файли
+
+```
+flux/
+  └── observability/
+      ├── namespace.yaml    ← observability namespace
+      ├── phoenix.yaml      ← HelmRelease Phoenix 5.0.23
+      └── qdrant.yaml       ← HelmRelease Qdrant 1.17.1
+```
+
+### Перевірка
+
+```bash
+kubectl get helmrelease -n observability
+kubectl get pods -n observability
+```
+
+---
+
+## Лабораторна №6 — Tracing та Evaluation
+
+**Мета:** Додати OpenTelemetry трасування до MCP сервера та отримати траси у Phoenix.
+
+### Що зроблено
+
+- Підключено `arize-phoenix-otel` та `opentelemetry-instrumentation-mcp` до `newbornk-mcp`
+- Налаштовано OTLP gRPC експорт до `phoenix-svc.observability:4317`
+- Аутентифікація через `PHOENIX_ADMIN_SECRET` (Bearer token)
+- Додано `@traced_tool` декоратор до всіх 7 MCP інструментів — кожен виклик трасується з `input.value` та `output.value`
+
+### Tracing Flow
+
+```
+kagent → newbornk-agent → newbornk-mcp tool call
+                                │
+                    @traced_tool decorator
+                                │
+                    OpenTelemetry span created
+                    (tool name, input, output)
+                                │
+                    OTLP gRPC → phoenix-svc:4317
+                                │
+                    Phoenix UI → project "newbornk-mcp"
+```
+
+### Перегляд трасів
+
+```bash
+kubectl port-forward svc/phoenix-svc 6006:6006 -n observability
+# → http://localhost:6006 → Projects → newbornk-mcp
+```
+
+Phoenix показує для кожного виклику інструменту:
+- Назву інструменту (`get_products`, `update_product_seo` тощо)
+- Вхідні параметри (`input.value`)
+- Результат виконання (`output.value`)
+- Час та статус (success / error)
+
+### Ключові зміни
+
+```
+newbornk-mcp/
+  ├── server.py           ← Phoenix tracing init + @traced_tool на всіх tools
+  ├── requirements.txt    ← + arize-phoenix-otel, opentelemetry-instrumentation-mcp
+  └── k8s/
+      └── deployment.yaml ← + PHOENIX_COLLECTOR_ENDPOINT, PHOENIX_API_KEY env vars
+```
 
 ---
 
