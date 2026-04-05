@@ -21,13 +21,5 @@ spec:
   model: gemini-2.5-flash
   provider: Gemini
   gemini: {}
----
-apiVersion: kagent.dev/v1alpha2
-kind: RemoteMCPServer
-metadata:
-  name: my-mcp-server
-  namespace: kagent
-spec:
-  url: http://agentgateway:3000
 
 
