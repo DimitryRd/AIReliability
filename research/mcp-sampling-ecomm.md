@@ -1,6 +1,12 @@
 # MCP Sampling: AI у реальному e-commerce бізнесі
 ## Кейс: NEWBORN K — concept store (newbornk.com)
 
+
+cheatlinks k9s - https://www.hackingnote.com/en/cheatsheets/k9s/
+
+Freelens is a Kubernetes IDE that provides a graphical interface for managing and monitoring Kubernetes clusters. Freelens is maintained by the community. - https://freelensapp.github.io/
+
+
 **ВІД СЕБЕ**
 Я як розробник та фаундер власного бізнесу прекрасно розумію що наявність нових технологій тут і зараз має приносити value та окуповувати себе в найближчий час. Відсутність результату - витрачені кошти, неоптимізовані витрати, зменшення рентабельності і звідси - закриття бізнесу. 
 Основна механізм використнная протоколу MCP - використнна сервером ініціації запитів до ЛЛМ через кліеєнта

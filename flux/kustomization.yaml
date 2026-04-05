@@ -4,3 +4,6 @@ resources:
   - ../kagent/model-config.yaml
   - kagent/agent.yaml
   - flux-ui/helmrelease.yaml
+  - observability/namespace.yaml
+  - observability/phoenix.yaml
+  - observability/qdrant.yaml
