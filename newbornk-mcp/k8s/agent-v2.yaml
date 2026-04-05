@@ -1,21 +1,25 @@
 apiVersion: kagent.dev/v1alpha2
 kind: Agent
 metadata:
-  name: newbornk-agent
+  name: newbornk-agent-v2
   namespace: kagent
   labels:
-    app.kubernetes.io/version: "1.0.0"
-    agent.kagent.dev/model: "gemini-2.5-flash"
-    slot: blue
-    active: "true"
+    app.kubernetes.io/version: "2.0.0"
+    agent.kagent.dev/model: "claude-sonnet-4-20250514"
+    slot: green
+    active: "false"
+  annotations:
+    agent.kagent.dev/changelog: "Canary: switched to Claude, enhanced SEO prompt, added shopify-dev skill"
 spec:
   type: Declarative
   declarative:
-    modelConfig: gemini-model-config
+    modelConfig: anthropic-model-config
     systemMessage: |
       Ти AI-асистент для концепт-стору NEWBORN K (newbornk.com) у Києві.
-      Допомагаєш з управлінням асортиментом, генерацією описів товарів та аналітикою продажів.
+      Допомагаєш з управлінням асортиментом, SEO оптимізацією та аналітикою продажів.
+      Ти також Shopify розробник — допомагаєш з front-end, performance та CRO.
       Відповідаєш українською мовою. Стиль — діловий але дружній.
+      При генерації SEO: title до 70 символів, description до 160 символів, мінімалістичний стиль.
     a2aConfig:
       skills:
         - id: seo-automation
@@ -45,6 +49,15 @@ spec:
           examples:
             - "Show me all products"
             - "Find product UVEX"
+        - id: shopify-dev
+          name: Shopify Development
+          description: Front-end, performance та CRO рекомендації для Shopify магазину
+          inputModes: ["text"]
+          outputModes: ["text"]
+          tags: ["shopify", "frontend", "cro", "performance"]
+          examples:
+            - "How to improve page speed on collection page?"
+            - "Suggest CRO improvements for product page"
     tools:
       - type: McpServer
         mcpServer:
