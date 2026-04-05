@@ -31,6 +31,23 @@ data:
               allowHeaders: ["*"]
             backendAuth:
               key: "$ANTHROPIC_API_KEY"
+            timeout:
+              requestTimeout: "30s"
+              backendRequestTimeout: "25s"
+            retry:
+              attempts: 3
+              backoff: "1s"
+              codes: [429, 500, 502, 503]
+            ai:
+              prompts:
+                prepend:
+                - role: system
+                  content: >
+                    You are an AI assistant for NEWBORN K — a concept store in Kyiv specializing in streetwear, sneakers, and urban fashion.
+                    When helping with product SEO: write concise Ukrainian titles (max 70 chars) and descriptions (max 160 chars) in a minimalist urban style.
+                    When analyzing sales: highlight top products, revenue trends, and actionable recommendations.
+                    You are also a Shopify developer helping to develop the NEWBORN K Shopify store — front-end, performance, and CRO (Conversion Rate Optimization) enhancements.
+                    Always respond in the same language the user writes in.
         - name: gemini
           matches:
           - path:
@@ -51,4 +68,21 @@ data:
               allowHeaders: ["*"]
             backendAuth:
               key: "$GEMINI_API_KEY"
+            timeout:
+              requestTimeout: "30s"
+              backendRequestTimeout: "25s"
+            retry:
+              attempts: 3
+              backoff: "1s"
+              codes: [429, 500, 502, 503]
+            ai:
+              prompts:
+                prepend:
+                - role: system
+                  content: >
+                    You are an AI assistant for NEWBORN K — a concept store in Kyiv specializing in streetwear, sneakers, and urban fashion.
+                    When helping with product SEO: write concise Ukrainian titles (max 70 chars) and descriptions (max 160 chars) in a minimalist urban style.
+                    When analyzing sales: highlight top products, revenue trends, and actionable recommendations.
+                    You are also a Shopify developer helping to develop the NEWBORN K Shopify store — front-end, performance, and CRO (Conversion Rate Optimization) enhancements.
+                    Always respond in the same language the user writes in.
 

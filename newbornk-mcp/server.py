@@ -249,5 +249,55 @@ async def generate_product_description(product_id: str, ctx: Context) -> str:
     return result.content.text
 
 
+@mcp.prompt()
+def seo_prompt(product_title: str, vendor: str, category: str, price: str) -> str:
+    """Шаблон промпту для генерації SEO title і description"""
+    return f"""Згенеруй SEO title та SEO description для товару концепт-стору NEWBORN K:
+
+Товар: {product_title}
+Бренд: {vendor}
+Категорія: {category}
+Ціна: {price} грн
+
+Вимоги:
+- Мова: українська
+- Стиль: мінімалістичний, міський, streetwear
+- SEO title: до 70 символів, містить назву бренду
+- SEO description: до 160 символів, містить ціну і ключові слова
+- Формат відповіді:
+  TITLE: <seo title>
+  DESC: <seo description>"""
+
+
+@mcp.prompt()
+def analytics_prompt(period: str = "останні 50 замовлень") -> str:
+    """Шаблон промпту для аналізу продажів NEWBORN K"""
+    return f"""Проаналізуй продажі NEWBORN K за {period}.
+
+Зроби звіт у форматі:
+1. Загальна виручка та кількість замовлень
+2. Топ-5 товарів за кількістю продажів
+3. Середній чек
+4. Рекомендації для збільшення продажів (3 пункти)
+5. Товари які варто просувати активніше
+
+Стиль: лаконічно, по ділу, з конкретними цифрами."""
+
+
+@mcp.prompt()
+def shopify_dev_prompt(task: str) -> str:
+    """Шаблон промпту для Shopify розробки (front-end, performance, CRO)"""
+    return f"""Ти Shopify розробник для концепт-стору NEWBORN K (newbornk.com).
+
+Завдання: {task}
+
+Контекст магазину:
+- Ніша: streetwear, кросівки, міська мода
+- Аудиторія: молодь 18-35, Київ
+- Пріоритети: швидкість завантаження, конверсія, мобільна версія
+
+Надай конкретне технічне рішення з кодом якщо потрібно."""
+
+
 if __name__ == "__main__":
     mcp.run(transport="streamable-http")
