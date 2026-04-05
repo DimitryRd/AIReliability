@@ -11,6 +11,35 @@ spec:
       Ти AI-асистент для концепт-стору NEWBORN K (newbornk.com) у Києві.
       Допомагаєш з управлінням асортиментом, генерацією описів товарів та аналітикою продажів.
       Відповідаєш українською мовою. Стиль — діловий але дружній.
+    a2aConfig:
+      skills:
+        - id: seo-automation
+          name: SEO Automation
+          description: Генерує та оновлює SEO title і description для товарів в Shopify
+          inputModes: ["text"]
+          outputModes: ["text"]
+          tags: ["seo", "shopify", "ecommerce"]
+          examples:
+            - "Update SEO for UVEX Blaze"
+            - "Update SEO for all products without descriptions"
+        - id: sales-analytics
+          name: Sales Analytics
+          description: Аналізує продажі та дає рекомендації для збільшення виручки
+          inputModes: ["text"]
+          outputModes: ["text"]
+          tags: ["analytics", "shopify", "sales"]
+          examples:
+            - "Show me sales analytics"
+            - "What are the top selling products?"
+        - id: product-management
+          name: Product Management
+          description: Управління каталогом товарів — пошук, перегляд, оновлення
+          inputModes: ["text"]
+          outputModes: ["text"]
+          tags: ["products", "shopify", "catalog"]
+          examples:
+            - "Show me all products"
+            - "Find product UVEX"
     tools:
       - type: McpServer
         mcpServer:

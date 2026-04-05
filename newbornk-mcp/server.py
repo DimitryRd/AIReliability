@@ -140,6 +140,32 @@ async def get_orders_analytics() -> str:
         f"Топ-5 товарів:\n{top_str}"
     )
 
+@mcp.tool()
+async def get_products_with_stock(limit: int = 20) -> str:
+    """Отримати список товарів із залишком більше 0"""
+    data = await shopify_get(f"products.json?limit={limit}&fields=id,title,vendor,product_type,variants")
+    products = data.get("products", [])
+
+    in_stock = []
+    for p in products:
+        total_qty = sum(
+            v.get("inventory_quantity", 0)
+            for v in p.get("variants", [])
+            if v.get("inventory_management") == "shopify"  # тільки ті, що tracked
+        )
+        if total_qty > 0:
+            in_stock.append((p, total_qty))
+
+    if not in_stock:
+        return "Немає товарів із залишком"
+
+    lines = []
+    for p, qty in in_stock:
+        price = p["variants"][0]["price"] if p["variants"] else "N/A"
+        lines.append(f"ID:{p['id']} | {p['title']} | {p['vendor']} | {price} грн | залишок: {qty}")
+
+    return f"Товари в наявності ({len(in_stock)}):\n" + "\n".join(lines)
+
 
 @mcp.tool()
 async def generate_product_description(product_id: str, ctx: Context) -> str:
