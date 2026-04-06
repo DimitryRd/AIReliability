@@ -20,18 +20,30 @@ register(
 tracer = trace.get_tracer("newbornk-mcp")
 
 def traced_tool(func):
-    """Wrap MCP tools to capture input/output in Phoenix"""
+    """Wrap MCP tools to capture input/output and token usage in Phoenix"""
     @wraps(func)
     async def wrapper(*args, **kwargs):
         with tracer.start_as_current_span(func.__name__, kind=SpanKind.SERVER) as span:
             span.set_attribute("openinference.span.kind", "TOOL")
             span.set_attribute("tool.name", func.__name__)
-            # log inputs (skip Context object — not serializable)
             safe_kwargs = {k: v for k, v in kwargs.items() if k != "ctx"}
-            span.set_attribute("input.value", json.dumps(safe_kwargs))
+            input_str = json.dumps(safe_kwargs)
+            span.set_attribute("input.value", input_str)
+
+            # estimate prompt tokens (4 chars ≈ 1 token)
+            prompt_tokens = len(input_str) // 4
+            span.set_attribute("llm.token_count.prompt", prompt_tokens)
+
             try:
                 result = await func(*args, **kwargs)
-                span.set_attribute("output.value", str(result)[:2000])
+                output_str = str(result)[:2000]
+                span.set_attribute("output.value", output_str)
+
+                # estimate completion tokens
+                completion_tokens = len(output_str) // 4
+                span.set_attribute("llm.token_count.completion", completion_tokens)
+                span.set_attribute("llm.token_count.total", prompt_tokens + completion_tokens)
+
                 return result
             except Exception as e:
                 span.record_exception(e)
