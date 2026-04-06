@@ -85,12 +85,49 @@ FastMCP - частина офіційного mcp пакету від антро
 Менше коду та все генерується з type hints та docstrings
 
 10. About finops: how much control I can have?
+    - Вибір моделі - дорога або більше дешевша, ще на етапі A/B тестування або Canary.
+    - Налаштувати в Agentgateway - localRateLimits - max N запитів на хвилину
+    - Налаштувати в kagent ai.defaults.maxTokents - кількість токенів на запит
+    - Phoenix traces - скільки токенів кожен виклик
+
 
 11. Token level / per agent level
+ Токен левел можно реалізувати для всього маршруту 
+    # config.yaml — глобально для всього маршруту
+    policies:
+        ai:
+            defaults:
+            maxTokens: 500    
+            overrides:
+            maxTokens: 2000
 
+Токен левел на кожен агент 
+    # agent.yaml — кожен агент має свій ліміт
+    metadata:
+        name: newbornk-agent        # бізнес агент — більше токенів
+    spec:
+        declarative:
+            maxIterations: 10       # max 10 LLM викликів на сесію
+            maxTokens: 2000
+
+    ---
+    metadata:
+        name: devops-agent        # технічний агент — менше
+    spec:
+        declarative:
+            maxIterations: 5
+            maxTokens: 500
+
+
+      
 12. Can I implement custom cost controls?
+Це можливо спостерігати в Phoenix або налаштувати алертс в Графана 
+В проекті реалізовано за допомогою скрипта cost-alerts.py
+Трекінг використання токенів в Фенікс
+![alt text](<Screenshot 2026-04-06 at 19.06.35.png>)
 
 13. Per-agent budgets or depth of Token limits
+Нативного per-agent token budget в kagent немає — це gap в фреймворку, який закривається або на рівні gateway (routing), або зовнішнім моніторингом (Phoenix + cost-alert.py).
 
 14. vLLM suitable for agents with many back and forth tool calls, or is it better for single shot inference?
 
